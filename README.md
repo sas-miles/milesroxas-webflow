@@ -14,6 +14,9 @@ Before starting to work with this template, please take some time to read throug
     - [Serving files on development mode](#serving-files-on-development-mode)
     - [Building multiple files](#building-multiple-files)
     - [Setting up a path alias](#setting-up-a-path-alias)
+- [Features](#features)
+  - [Swiper Sliders](#swiper-sliders)
+  - [Smart Sections](#smart-sections)
 - [Contributing guide](#contributing-guide)
 - [Pre-defined scripts](#pre-defined-scripts)
 - [CI/CD](#cicd)
@@ -163,6 +166,74 @@ You can disable this behavior in the `playwright.config.ts` file.
 
 If you project doesn't require any testing, you should disable the Tests job in the [CI workflow](#continuous-integration) by commenting it out in the `.github/workflows/ci.yml` file.
 This will prevent the tests from running when you open a Pull Request.
+
+## Features
+
+### Swiper Sliders
+
+This project includes a flexible Swiper.js implementation that supports multiple slider types through data attributes.
+
+#### Basic Usage
+
+```html
+<div data-swiper data-swiper-type="default" class="swiper">
+  <div class="swiper-wrapper">
+    <div data-swiper-slide class="swiper-slide">Slide 1</div>
+    <div data-swiper-slide class="swiper-slide">Slide 2</div>
+  </div>
+  <div data-swiper-pagination></div>
+  <div data-swiper-prev></div>
+  <div data-swiper-next></div>
+</div>
+```
+
+#### Available Slider Types
+
+- `default`: Standard single-slide slider
+- `youtube`: 3-column slider optimized for media content
+- `testimonial`: Fade effect slider for testimonials
+- `product`: Auto-width slider for product showcases
+- `gallery`: Coverflow effect for image galleries
+
+#### Custom Configuration
+
+You can override default settings using data attributes:
+
+```html
+<div
+  data-swiper
+  data-swiper-type="youtube"
+  data-slides-per-view="2"
+  data-space-between="10"
+  data-loop="false"
+  data-autoplay="true"
+  data-speed="800"
+  data-effect="slide"
+>
+  <!-- Slides here -->
+</div>
+```
+
+#### Adding New Slider Types
+
+To add a new slider type:
+
+1. Open `src/features/sliders/multipleSwiper.ts`
+2. Add your new configuration to the `SWIPER_CONFIGS` object:
+   ```typescript
+   'my-new-type': {
+     slidesPerView: 2,
+     spaceBetween: 20,
+     loop: true,
+     autoplay: false,
+     speed: 600,
+     effect: 'slide',
+   }
+   ```
+3. If needed, import additional Swiper modules and update the `moduleList` logic
+4. Use in HTML with `data-swiper-type="my-new-type"`
+
+### Smart Sections
 
 ## Contributing guide
 

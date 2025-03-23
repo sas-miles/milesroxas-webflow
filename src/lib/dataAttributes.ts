@@ -9,5 +9,6 @@ export const ATTRIBUTE = {
   swiperNavPrev: 'data-swiper-prev',
   swiperNavNext: 'data-swiper-next',
   swiperPagination: 'data-swiper-pagination',
+  swiperType: 'data-swiper-type',
   // Add any other attributes you need here
 };

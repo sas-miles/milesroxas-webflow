@@ -1,7 +1,7 @@
-import React from 'react';
-import * as ReactDOM from 'react-dom/client';
+// import React from 'react';
 
-import App from './App';
+// import * as ReactDOM from 'react-dom/client';
+// import App from './App';
 import { initScrollFeatures } from './features/scroll';
 import { initSliders } from './features/sliders';
 
@@ -17,13 +17,13 @@ window.Webflow.push(() => {
   // Initialize sliders
   initSliders();
 
-  const rootElement = document.getElementById('root');
+  // const rootElement = document.getElementById('root');
 
-  // Make sure we have a root element
-  if (rootElement) {
-    const root = ReactDOM.createRoot(rootElement);
-    root.render(React.createElement(App));
-  } else {
-    console.error('No root element found! Add a div with id="root" to your Webflow page');
-  }
+  // // Make sure we have a root element
+  // if (rootElement) {
+  //   const root = ReactDOM.createRoot(rootElement);
+  //   root.render(React.createElement(App));
+  // } else {
+  //   console.error('No root element found! Add a div with id="root" to your Webflow page');
+  // }
 });

@@ -25,7 +25,7 @@ export const initBasicSwiper = (element: HTMLElement): Swiper => {
   // Get slider configuration from data attributes
   const {
     slidesPerView = '1',
-    spaceBetween = '30',
+    spaceBetween = '0',
     loop = 'true',
     autoplay = 'false',
     speed = '500',
@@ -38,6 +38,12 @@ export const initBasicSwiper = (element: HTMLElement): Swiper => {
     slidesPerView: slidesPerView === 'auto' ? 'auto' : parseInt(slidesPerView, 10),
     spaceBetween: parseInt(spaceBetween, 10),
     loop: loop === 'true',
+    // Add additional loop options to address translation issues
+    ...(loop === 'true' && {
+      loopAdditionalSlides: 1,
+      loopedSlides: slidesPerView === 'auto' ? 1 : parseInt(slidesPerView, 10),
+      loopPreventsSlide: true,
+    }),
     effect: effect as 'slide' | 'fade' | 'cube' | 'coverflow' | 'flip' | 'creative' | 'cards',
     speed: parseInt(speed, 10),
     autoplay:
