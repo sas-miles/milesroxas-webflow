@@ -1,13 +1,12 @@
-import { initAllSwipers, initBasicSwiper } from './basicSwiper';
-import { initAllTypedSwipers, initTypedSwiper } from './multipleSwiper';
+import { initAllSwipers, initSwiper } from './multipleSwiper';
 
 /**
  * Initialize all sliders on the page
  */
 export function initSliders(): void {
-  // Initialize all Swiper sliders with type-specific configurations
-  initAllTypedSwipers();
+  // Initialize all Swiper sliders
+  initAllSwipers();
 }
 
-// Export individual features for direct use
-export { initAllSwipers, initAllTypedSwipers, initBasicSwiper, initTypedSwiper };
+// Export for direct use
+export { initAllSwipers, initSwiper };
