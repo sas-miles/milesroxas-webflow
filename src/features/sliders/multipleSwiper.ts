@@ -67,7 +67,7 @@ export const initSwiper = (element: HTMLElement): Swiper => {
     config.breakpoints = {
       768: {
         slidesPerView: 2,
-        spaceBetween: 60,
+        spaceBetween: 0,
       },
     };
   } else if (swiperType === 'testimonial') {
