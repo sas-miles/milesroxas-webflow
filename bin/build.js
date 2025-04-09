@@ -2,12 +2,17 @@ import * as esbuild from 'esbuild';
 import { readdirSync } from 'fs';
 import { join, sep } from 'path';
 
+/* global process, console */
+
 // Config output
 const BUILD_DIRECTORY = 'dist';
 const PRODUCTION = process.env.NODE_ENV === 'production';
+const STYLES_ONLY = process.env.STYLES_ONLY === 'true';
 
 // Config entrypoint files
-const ENTRY_POINTS = ['src/index.ts'];
+const ENTRY_POINTS = STYLES_ONLY
+  ? ['src/styles/main.css']
+  : ['src/index.ts', 'src/styles/main.css'];
 
 // Config dev serving
 const LIVE_RELOAD = !PRODUCTION;
@@ -87,6 +92,5 @@ function logServedFiles() {
     })
     .filter(Boolean);
 
-  // eslint-disable-next-line no-console
   console.table(filesInfo);
 }
