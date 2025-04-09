@@ -1,5 +1,3 @@
-// Import Swiper and its modules
-// Import Swiper styles properly (Swiper v11+)
 import 'swiper/css'; // Core Swiper styles
 import 'swiper/css/navigation'; // Navigation module styles
 import 'swiper/css/pagination'; // Pagination module styles
@@ -79,15 +77,44 @@ export const initSwiper = (element: HTMLElement): Swiper => {
     };
     config.speed = 800;
   } else if (swiperType === 'work') {
-    config.slidesPerView = 2;
-    config.spaceBetween = 30;
-    config.centeredSlides = true;
+    // Fix for extremely large slides
+    config.slidesPerView = 'auto'; // Use auto instead of fixed number
+    config.spaceBetween = 24;
+    config.centeredSlides = false;
+    config.loop = false;
+
+    // Ensure Webflow doesn't override width
+    config.slideClass = 'swiper-slide';
+    config.wrapperClass = 'swiper-wrapper';
+
+    // Set slide sizing constraints
+    config.slideToClickedSlide = true;
+
+    // Override breakpoints
     config.breakpoints = {
+      320: {
+        slidesPerView: 'auto',
+        spaceBetween: 16,
+      },
       768: {
-        slidesPerView: 3,
+        slidesPerView: 'auto',
         spaceBetween: 24,
       },
+      1200: {
+        slidesPerView: 1.5,
+        spaceBetween: 24,
+        centeredSlides: true,
+      },
+      1400: {
+        slidesPerView: 2,
+        spaceBetween: 24,
+        centeredSlides: true,
+      },
     };
+
+    // Add observer to recalculate on DOM changes
+    config.observer = true;
+    config.observeParents = true;
   } else if (swiperType === 'gallery') {
     config.slidesPerView = 1.5;
     config.spaceBetween = 20;

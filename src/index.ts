@@ -8,14 +8,21 @@ import { initSliders } from './features/sliders';
 // Initialize Webflow
 window.Webflow ||= [];
 window.Webflow.push(() => {
-  // Initialize all scroll features (smooth scrolling and animations)
-  const lenis = initScrollFeatures();
-
-  // Store lenis instance on window to prevent garbage collection
-  window.lenis = lenis;
-
   // Initialize sliders
   initSliders();
+
+  // Wait for everything to load before initializing Lenis
+  window.addEventListener('load', () => {
+    console.log('[index] Window loaded, initializing Lenis');
+
+    // Initialize all scroll features (smooth scrolling and animations)
+    const lenis = initScrollFeatures();
+
+    // Store lenis instance on window to prevent garbage collection
+    window.lenis = lenis;
+
+    console.log('[index] Lenis initialized after page load');
+  });
 
   // const rootElement = document.getElementById('root');
 
