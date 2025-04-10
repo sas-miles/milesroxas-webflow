@@ -5,6 +5,6 @@
 
 import './main.css';
 import './swiper.css';
-
+import './transitions.css';
 // Add additional style imports below
 // Example: import './components/button.css';

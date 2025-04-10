@@ -1,4 +1,4 @@
-import { animateWords } from './wordAnimation';
+import { animateWords } from '../scroll/animations/wordAnimation';
 
 /**
  * Initialize all text animations on the page

@@ -54,7 +54,7 @@ The slider system is designed to work with minimal HTML markup using data attrib
 
 ## Slider Types
 
-The system supports multiple pre-configured slider types:
+The system supports multiple pre-configured slider types using a configuration pattern:
 
 1. **default** - Standard single-slide slider
 
@@ -96,9 +96,9 @@ The system supports multiple pre-configured slider types:
    </div>
    ```
 
-   - Mobile: 2 slides visible with 30px spacing
-   - Tablet/Desktop: 3 slides visible with 24px spacing
-   - Centered slides for focus
+   - Adaptive slide sizing with auto width
+   - Dynamic spacing based on breakpoints
+   - Centered slides on larger screens
 
 5. **gallery** - Image gallery slider
    ```html
@@ -109,6 +109,34 @@ The system supports multiple pre-configured slider types:
    - Mobile: 1.5 slides visible (peek effect) with 20px spacing
    - Tablet/Desktop: 1 slide visible with 40px spacing
    - Centered slides for focus
+
+## Implementation Architecture
+
+The Swiper implementation uses a configuration pattern for better maintainability:
+
+```typescript
+// Slider type configurations
+const sliderConfigs: Record<string, (config: SwiperOptions) => SwiperOptions> = {
+  default: (config) => config,
+
+  youtube: (config) => ({
+    ...config,
+    slidesPerView: 1,
+    spaceBetween: 20,
+    centeredSlides: true,
+    breakpoints: {
+      768: {
+        slidesPerView: 2,
+        spaceBetween: 0,
+      },
+    },
+  }),
+
+  // Other configurations...
+};
+```
+
+This approach makes it easy to add new slider types and customize existing ones.
 
 ## Configuration Options
 
@@ -143,382 +171,68 @@ Each slider type comes with default settings, but you can override them with spe
 | `data-autoplay-delay`  | 3000      | Autoplay delay between slides (ms)          |
 | `data-centered-slides` | false     | Centers active slide                        |
 
-## Key Styles
+## Lenis Integration
 
-The Swiper implementation requires some basic CSS styles to function properly. The core styles are imported directly in the implementation:
-
-```typescript
-import 'swiper/css'; // Core Swiper styles
-import 'swiper/css/navigation'; // Navigation module styles
-import 'swiper/css/pagination'; // Pagination module styles
-import 'swiper/css/effect-fade'; // Fade effect styles
-```
-
-### Essential CSS Classes
-
-For proper functioning, these classes should be present:
-
-```css
-/* Container */
-.swiper {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Wrapper for slides */
-.swiper-wrapper {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transition-property: transform;
-  box-sizing: content-box;
-}
-
-/* Individual slide */
-.swiper-slide {
-  flex-shrink: 0;
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transition-property: transform;
-}
-
-/* Navigation arrows */
-.swiper-button-prev,
-.swiper-button-next {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  cursor: pointer;
-}
-
-.swiper-button-prev {
-  left: 10px;
-}
-
-.swiper-button-next {
-  right: 10px;
-}
-
-/* Pagination bullets */
-.swiper-pagination {
-  position: absolute;
-  text-align: center;
-  bottom: 10px;
-  width: 100%;
-  z-index: 10;
-}
-
-.swiper-pagination-bullet {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #000;
-  opacity: 0.2;
-  margin: 0 4px;
-  cursor: pointer;
-}
-
-.swiper-pagination-bullet-active {
-  opacity: 1;
-  background: #007aff;
-}
-```
-
-### Responsive Considerations
-
-For mobile-friendly sliders:
-
-```css
-@media (max-width: 768px) {
-  .swiper-button-prev,
-  .swiper-button-next {
-    width: 30px;
-    height: 30px;
-  }
-
-  .swiper-pagination-bullet {
-    width: 6px;
-    height: 6px;
-  }
-}
-```
-
-### Custom Style Examples
-
-#### Testimonial Slider Style
-
-```css
-.testimonial-swiper .swiper-slide {
-  opacity: 0;
-  transition: opacity 0.8s ease;
-}
-
-.testimonial-swiper .swiper-slide-active {
-  opacity: 1;
-}
-
-.testimonial-swiper .swiper-pagination {
-  bottom: -30px;
-}
-
-.testimonial-swiper .swiper-pagination-bullet {
-  background: #ddd;
-}
-
-.testimonial-swiper .swiper-pagination-bullet-active {
-  background: #333;
-}
-```
-
-#### Gallery Slider Style
-
-```css
-.gallery-swiper .swiper-slide {
-  transition: transform 0.3s ease;
-  transform: scale(0.8);
-}
-
-.gallery-swiper .swiper-slide-active {
-  transform: scale(1);
-}
-
-.gallery-swiper .swiper-button-prev,
-.gallery-swiper .swiper-button-next {
-  color: white;
-  background: rgba(0, 0, 0, 0.5);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-```
-
-## Default Swiper Type Review
-
-The default swiper type is the base configuration for all sliders. When you use `data-swiper-type="default"` or don't specify a type, this configuration is applied.
-
-### Default Configuration
+The Swiper implementation includes built-in compatibility with Lenis smooth scrolling:
 
 ```typescript
-// Basic configuration with defaults
-const config: SwiperOptions = {
-  modules: [Navigation, Pagination],
-  slidesPerView: 1,
-  spaceBetween: 30,
-  loop: true,
-  speed: 500,
+// Lenis compatibility
+nested: true,
+mousewheel: false,
+touchReleaseOnEdges: true,
+```
 
-  // Lenis compatibility
-  nested: true,
-  mousewheel: false,
-  touchReleaseOnEdges: true,
+These settings ensure that:
 
-  // Navigation
-  navigation:
-    prevButton && nextButton
-      ? {
-          prevEl: prevButton,
-          nextEl: nextButton,
-        }
-      : false,
+- Sliders work properly inside scrollable content
+- Mouse wheel events don't conflict with Lenis scrolling
+- Touch gestures allow scrolling when reaching the edges of a slider
 
-  // Pagination
-  pagination: paginationEl
-    ? {
-        el: paginationEl,
-        clickable: true,
-      }
-    : false,
+## Adding New Slider Types
+
+To add a new slider type:
+
+1. Open `src/features/sliders/multipleSwiper.ts`
+2. Add your new configuration to the `sliderConfigs` object:
+
+```typescript
+const sliderConfigs = {
+  // Existing configs...
+
+  'my-new-type': (config) => ({
+    ...config,
+    slidesPerView: 2,
+    spaceBetween: 20,
+    // Add other configuration options
+    breakpoints: {
+      768: {
+        slidesPerView: 3,
+        spaceBetween: 30,
+      },
+    },
+  }),
 };
 ```
 
-### Key Features of Default Type
-
-1. **Single Slide View**: `slidesPerView: 1` shows one slide at a time
-2. **Moderate Spacing**: `spaceBetween: 30` provides 30px gap between slides
-3. **Continuous Loop**: `loop: true` enables infinite sliding
-4. **Medium Transition Speed**: `speed: 500` creates a balanced transition (500ms)
-5. **Optional Navigation**: Adds prev/next buttons if elements with appropriate data attributes exist
-6. **Optional Pagination**: Adds pagination dots if an element with the pagination data attribute exists
-7. **No Autoplay**: Default type doesn't automatically advance slides
-8. **Lenis Compatibility**: Special settings to work with Lenis smooth scrolling
-
-### Best Practices for Default Type
-
-1. **Use for General Content**: The default type works well for general content sliders where you want to show one item at a time.
-
-2. **Consider Container Width**: Since `slidesPerView: 1`, the slider will take the full width of its container.
-
-3. **Navigation Placement**: For best UX, place navigation buttons (`data-swiper-prev` and `data-swiper-next`) outside the slide content but within the swiper container.
-
-4. **Add Custom Classes**: If you need to target this slider specifically with CSS, add custom classes alongside the required ones:
-
-   ```html
-   <div data-swiper data-swiper-type="default" class="swiper my-custom-slider"></div>
-   ```
-
-5. **Responsive Adjustments**: The default type doesn't have built-in responsive breakpoints. Add them as needed:
-   ```html
-   <div
-     data-swiper
-     data-swiper-type="default"
-     class="swiper"
-     data-breakpoints='{"768":{"spaceBetween":15},"1200":{"spaceBetween":40}}'
-   ></div>
-   ```
-
-### Common Modifications
-
-If you need to adjust the default type slightly, use data attributes:
-
-```html
-<div
-  data-swiper
-  data-swiper-type="default"
-  data-loop="false"
-  data-speed="300"
-  data-space-between="10"
-  class="swiper"
->
-  <!-- Slides here -->
-</div>
-```
-
-### Potential Issues
-
-1. **Height Calculation**: By default, swiper calculates height based on the tallest slide. If slides have different heights, consider:
-
-   - Setting a fixed height on the swiper container
-   - Using `data-auto-height="true"` for dynamic height (may cause jumpy transitions)
-
-2. **Touch Interaction**: If the slider seems to capture all touch events and prevents scrolling, check:
-
-   - `touchReleaseOnEdges` setting (default is true for compatibility)
-   - Consider `data-allow-touch-move="false"` if it's an issue on mobile
-
-3. **Overflow Behavior**: If the entire slider moves when trying to slide, check for:
-   - Proper CSS structure ensuring `.swiper` has `overflow: hidden`
-   - No conflicting CSS overriding swiper's default behavior
-
-### When to Choose a Different Type
-
-Consider using a specialized type instead of default when:
-
-1. **Showcasing Multiple Items**: Use `work` or `youtube` types for showing multiple items
-2. **Fade Transitions**: Use `testimonial` type for fade effects
-3. **Gallery with Peek**: Use `gallery` type for creating peek effects (seeing part of next/prev slide)
-
-## Customization
-
-### Adding a New Slider Type
-
-To add a custom slider type, modify the `multipleSwiper.ts` file:
-
-1. Open `src/features/sliders/multipleSwiper.ts`
-2. Add your new configuration in the type-specific settings section:
+3. If needed, import additional Swiper modules at the top of the file:
 
 ```typescript
-// Apply type-specific settings
-if (swiperType === 'your-new-type') {
-  config.slidesPerView = 2;
-  config.spaceBetween = 20;
-  config.centeredSlides = true;
-
-  // Add any modules you need
-  config.modules?.push(EffectCoverflow, Autoplay);
-
-  // Add breakpoints for responsive design
-  config.breakpoints = {
-    768: {
-      slidesPerView: 3,
-      spaceBetween: 30,
-    },
-    1200: {
-      slidesPerView: 4,
-      spaceBetween: 40,
-    },
-  };
-}
+import { Autoplay, EffectFade, Navigation, Pagination, EffectCube } from 'swiper/modules';
 ```
 
-3. Import any additional Swiper modules at the top of the file
-4. Use in HTML with `data-swiper-type="your-new-type"`
-
-### Custom Event Handlers
-
-For advanced usage, you can extend the slider initialization:
-
-```typescript
-// In a custom script
-import { initSwiper } from './features/sliders/multipleSwiper';
-
-// Get your slider element
-const mySlider = document.querySelector('[data-my-custom-slider]');
-
-// Initialize with the system
-if (mySlider) {
-  const swiperInstance = initSwiper(mySlider as HTMLElement);
-
-  // Add custom events
-  swiperInstance.on('slideChange', () => {
-    console.log('Slide changed to', swiperInstance.activeIndex);
-    // Your custom logic here
-  });
-}
-```
-
-## Lenis Integration
-
-The slider system is designed to work seamlessly with Lenis smooth scrolling. Key integration features:
-
-```typescript
-// Lenis compatibility settings in the slider config
-{
-  nested: true, // Tells Swiper it's inside scrollable content
-  mousewheel: false, // Disable mousewheel to prevent conflicts with Lenis
-  touchReleaseOnEdges: true, // Allow scrolling when reaching slider edges
-}
-```
-
-This ensures that:
-
-- Sliders function properly inside Lenis smooth-scrolled content
-- Touch and mouse interactions work correctly without blocking page scrolling
-- The overall experience remains smooth when combining sliders and page scrolling
+4. Use in HTML with `data-swiper-type="my-new-type"`
 
 ## Advanced Features
 
-### Accessing Swiper Instances
+### Lazy Loading Images
 
-You can access all initialized Swiper instances:
-
-```typescript
-import { initAllSwipers } from './features/sliders';
-
-// Initialize and get all sliders
-const allSwipers = initAllSwipers();
-
-// Access a specific slider
-const firstSlider = allSwipers[0];
-```
-
-### Lazy Loading
-
-For better performance with image-heavy sliders, enable lazy loading:
+For better performance with image-heavy sliders:
 
 ```html
-<div data-swiper>
+<div data-swiper data-swiper-type="gallery" class="swiper">
   <div class="swiper-wrapper">
     <div class="swiper-slide">
-      <img data-src="image1.jpg" class="swiper-lazy" />
+      <img src="placeholder.jpg" data-src="actual-image.jpg" class="swiper-lazy" />
       <div class="swiper-lazy-preloader"></div>
     </div>
     <!-- More slides -->
@@ -526,37 +240,66 @@ For better performance with image-heavy sliders, enable lazy loading:
 </div>
 ```
 
+### Custom Navigation
+
+You can style the navigation elements any way you want:
+
+```html
+<div data-swiper data-swiper-type="default" class="swiper">
+  <div class="swiper-wrapper">
+    <!-- Slides -->
+  </div>
+
+  <!-- Custom navigation -->
+  <button data-swiper-prev class="my-custom-prev-button">
+    <svg><!-- SVG icon --></svg>
+  </button>
+  <button data-swiper-next class="my-custom-next-button">
+    <svg><!-- SVG icon --></svg>
+  </button>
+</div>
+```
+
+### Multiple Sliders
+
+The system automatically initializes all sliders with the `data-swiper` attribute on the page:
+
+```javascript
+const swipers = initAllSwipers();
+```
+
+This returns an array of all initialized Swiper instances that you can reference later if needed.
+
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Slider not initializing**
+1. **Slider Not Initializing**
 
-   - Ensure proper HTML structure with `data-swiper` attribute
-   - Check console for errors
-   - Verify that initialization code runs after the DOM is ready
+   - Check that you've added the `data-swiper` attribute
+   - Verify that the HTML structure follows Swiper requirements
+   - Check browser console for errors
 
-2. **Navigation buttons not working**
+2. **Navigation/Pagination Not Working**
 
-   - Ensure elements have proper data attributes: `data-swiper-prev` and `data-swiper-next`
-   - Check that buttons are inside the slider container or properly referenced
+   - Ensure you've added the correct data attributes for navigation/pagination
+   - Check that the elements exist in the DOM
+   - Verify that the required Swiper modules are imported
 
-3. **Responsive settings not applying**
+3. **Responsive Issues**
 
-   - Verify breakpoint values in the configuration
+   - Check the breakpoints configuration
    - Test with browser dev tools in responsive mode
 
-4. **Conflicts with Lenis scroll**
-   - Ensure Lenis is properly initialized after sliders
-   - Verify `nested: true` and other Lenis compatibility settings
+4. **Conflicts with Lenis**
 
-### Performance Optimization
+   - Ensure the Lenis compatibility settings are applied
+   - Try setting `nested: true` explicitly
 
-For optimal performance:
-
-1. Use lazy loading for image-heavy sliders
-2. Consider reduced motion for users with that preference
-3. Use appropriate image sizes and optimize them for web
+5. **Performance Issues**
+   - Use lazy loading for image-heavy sliders
+   - Consider reducing the number of slides or complexity of slide content
+   - Enable hardware acceleration with CSS: `transform: translateZ(0);`
 
 ---
 

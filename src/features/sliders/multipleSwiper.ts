@@ -10,6 +10,84 @@ import type { SwiperOptions } from 'swiper/types';
 import { ATTRIBUTE } from '../../lib/dataAttributes';
 import { getAttributes } from '../../utils/attributes';
 
+// Slider type configurations
+const sliderConfigs: Record<string, (config: SwiperOptions) => SwiperOptions> = {
+  default: (config) => config,
+
+  youtube: (config) => ({
+    ...config,
+    slidesPerView: 1,
+    spaceBetween: 20,
+    centeredSlides: true,
+    breakpoints: {
+      768: {
+        slidesPerView: 2,
+        spaceBetween: 0,
+      },
+    },
+  }),
+
+  testimonial: (config) => {
+    const modules = [...(config.modules || []), EffectFade, Autoplay];
+    return {
+      ...config,
+      modules,
+      effect: 'fade',
+      autoplay: {
+        delay: 3000,
+        disableOnInteraction: false,
+      },
+      speed: 800,
+    };
+  },
+
+  work: (config) => ({
+    ...config,
+    slidesPerView: 'auto',
+    spaceBetween: 24,
+    centeredSlides: false,
+    loop: false,
+    slideClass: 'swiper-slide',
+    wrapperClass: 'swiper-wrapper',
+    slideToClickedSlide: true,
+    observer: true,
+    observeParents: true,
+    breakpoints: {
+      320: {
+        slidesPerView: 'auto',
+        spaceBetween: 16,
+      },
+      768: {
+        slidesPerView: 'auto',
+        spaceBetween: 24,
+      },
+      1200: {
+        slidesPerView: 1.5,
+        spaceBetween: 24,
+        centeredSlides: true,
+      },
+      1400: {
+        slidesPerView: 2,
+        spaceBetween: 24,
+        centeredSlides: true,
+      },
+    },
+  }),
+
+  gallery: (config) => ({
+    ...config,
+    slidesPerView: 1.5,
+    spaceBetween: 20,
+    centeredSlides: true,
+    breakpoints: {
+      768: {
+        slidesPerView: 1,
+        spaceBetween: 40,
+      },
+    },
+  }),
+};
+
 /**
  * Initialize a swiper slider
  * @param {HTMLElement} element - The container element for the slider
@@ -29,15 +107,17 @@ export const initSwiper = (element: HTMLElement): Swiper => {
   // Basic configuration with defaults
   const config: SwiperOptions = {
     modules: [Navigation, Pagination],
+    slideClass: 'swiper-slide',
+    wrapperClass: 'swiper-wrapper',
     slidesPerView: 1,
     spaceBetween: 30,
     loop: true,
     speed: 500,
 
     // Lenis compatibility
-    nested: true, // Tells Swiper it's inside scrollable content
-    mousewheel: false, // Disable mousewheel to prevent conflicts with Lenis
-    touchReleaseOnEdges: true, // Allow scrolling when reaching slider edges
+    nested: true,
+    mousewheel: false,
+    touchReleaseOnEdges: true,
 
     // Navigation
     navigation:
@@ -57,78 +137,12 @@ export const initSwiper = (element: HTMLElement): Swiper => {
       : false,
   };
 
-  // Apply type-specific settings
-  if (swiperType === 'youtube') {
-    config.slidesPerView = 1;
-    config.spaceBetween = 20;
-    config.centeredSlides = true;
-    config.breakpoints = {
-      768: {
-        slidesPerView: 2,
-        spaceBetween: 0,
-      },
-    };
-  } else if (swiperType === 'testimonial') {
-    config.modules?.push(EffectFade, Autoplay);
-    config.effect = 'fade';
-    config.autoplay = {
-      delay: 3000,
-      disableOnInteraction: false,
-    };
-    config.speed = 800;
-  } else if (swiperType === 'work') {
-    // Fix for extremely large slides
-    config.slidesPerView = 'auto'; // Use auto instead of fixed number
-    config.spaceBetween = 24;
-    config.centeredSlides = false;
-    config.loop = false;
-
-    // Ensure Webflow doesn't override width
-    config.slideClass = 'swiper-slide';
-    config.wrapperClass = 'swiper-wrapper';
-
-    // Set slide sizing constraints
-    config.slideToClickedSlide = true;
-
-    // Override breakpoints
-    config.breakpoints = {
-      320: {
-        slidesPerView: 'auto',
-        spaceBetween: 16,
-      },
-      768: {
-        slidesPerView: 'auto',
-        spaceBetween: 24,
-      },
-      1200: {
-        slidesPerView: 1.5,
-        spaceBetween: 24,
-        centeredSlides: true,
-      },
-      1400: {
-        slidesPerView: 2,
-        spaceBetween: 24,
-        centeredSlides: true,
-      },
-    };
-
-    // Add observer to recalculate on DOM changes
-    config.observer = true;
-    config.observeParents = true;
-  } else if (swiperType === 'gallery') {
-    config.slidesPerView = 1.5;
-    config.spaceBetween = 20;
-    config.centeredSlides = true;
-    config.breakpoints = {
-      768: {
-        slidesPerView: 1,
-        spaceBetween: 40,
-      },
-    };
-  }
+  // Apply type-specific configuration
+  const applyConfig = sliderConfigs[swiperType] || sliderConfigs.default;
+  const finalConfig = applyConfig(config);
 
   // Initialize Swiper
-  return new Swiper(element, config);
+  return new Swiper(element, finalConfig);
 };
 
 /**

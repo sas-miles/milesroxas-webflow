@@ -60,6 +60,7 @@
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "9.0.0-rc.10",
     "@react-three/postprocessing": "3.0.4",
+    "@swup/js-plugin": "^3.2.0",
     "gsap": "^3.12.7",
     "i": "^0.3.7",
     "install": "^0.13.0",
@@ -69,6 +70,7 @@
     "react-dom": "19.0.0",
     "split-type": "^0.3.4",
     "swiper": "^11.2.6",
+    "swup": "^4.8.1",
     "three": "^0.169.0",
     "three-stdlib": "^2.35.14"
   },

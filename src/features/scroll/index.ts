@@ -1,141 +1,120 @@
-import { ATTRIBUTE } from '../../lib/dataAttributes';
-import { getAttributes, getAttributesWithValue } from '../../utils/attributes';
-import { animateWords } from './animations/wordAnimation';
-import { initContextScroll } from './context/contextScroll';
-import { destroyLenis, initSmoothScroll } from './smooth/lenisScroll';
+import gsap from 'gsap';
+import ScrollTrigger from 'gsap/ScrollTrigger';
 
-// Store cleanup functions
-let contextScrollCleanup: (() => void) | null = null;
+import { ATTRIBUTE } from '../../lib/dataAttributes';
+import { getAttributes } from '../../utils/attributes';
+import { animateWords } from './animations/wordAnimation';
+import { destroyLenis, initSmoothScroll, resetLenis } from './smooth/lenisScroll';
+
+// Register GSAP plugins to ensure they're available
+gsap.registerPlugin(ScrollTrigger);
+
+// Store lenis instance and cleanup functions
+let lenisInstance: any = null;
+let contextCleanup: (() => void) | null = null;
+let wordAnimations: { timeline?: gsap.core.Timeline; scrollTrigger?: ScrollTrigger }[] = [];
+
+/**
+ * Kill ScrollTrigger instances related to word animations
+ */
+function cleanupWordAnimations() {
+  // Find all elements that have word animations
+  const wordAnimElements = getAttributes(ATTRIBUTE.wordAnimation);
+
+  // Kill all ScrollTrigger instances that might be related to word animations
+  ScrollTrigger.getAll().forEach((trigger) => {
+    if (trigger.vars.id?.includes('word-animation')) {
+      trigger.kill();
+    }
+  });
+
+  // Revert split text and cleanup each element
+  wordAnimElements.forEach((el) => {
+    try {
+      // Revert existing split text
+      import('split-type').then((SplitTypeModule) => {
+        const SplitType = SplitTypeModule.default;
+        new SplitType(el).revert();
+      });
+
+      // Reset element properties
+      gsap.set(el, { clearProps: 'all' });
+      el.style.opacity = '1';
+      el.style.visibility = 'visible';
+    } catch (error) {
+      console.error(`Error cleaning up word animation: ${error}`);
+    }
+  });
+
+  // Clear animations array
+  wordAnimations = [];
+}
+
+/**
+ * Initialize word animations for elements with the word-animation attribute
+ */
+function initWordAnimations() {
+  // Find and animate text elements
+  const textElements = getAttributes(ATTRIBUTE.wordAnimation);
+
+  if (textElements.length > 0) {
+    // Set up animations for text elements
+    textElements.forEach((el) => {
+      const animation = animateWords(el as HTMLElement);
+      wordAnimations.push(animation);
+    });
+
+    // Refresh ScrollTrigger to ensure animations work
+    ScrollTrigger.refresh();
+  }
+}
 
 /**
  * Initialize all scroll features
  * @returns The Lenis instance for smooth scrolling
  */
-export function initScrollFeatures() {
-  console.log('[scroll] Initializing scroll features');
-
+export function initScroll() {
   // Initialize smooth scrolling
-  const lenis = initSmoothScroll();
+  lenisInstance = initSmoothScroll();
 
-  // Find and animate text elements
-  const textElements = getAttributes(ATTRIBUTE.wordAnimation);
-  textElements.forEach((el) => {
-    animateWords(el);
-  });
+  // Initialize word animations
+  initWordAnimations();
 
-  // Setup scroll features for non-scroll-area elements
-  // This is useful when our content area is the one with smooth scrolling
-  setupScrollFeatures(lenis);
-
-  console.log('[scroll] Scroll features initialized');
-
-  return lenis;
-}
-
-/**
- * Setup scroll-related features and integrations
- * @param lenis The Lenis instance for smooth scrolling
- */
-function setupScrollFeatures(lenis: any) {
-  // Connect with any swiper sliders (swiper sliders inside scroll areas)
-  // This helps with nested scrollable elements
-  const swiperElements = getAttributes(ATTRIBUTE.swiper);
-  if (swiperElements.length > 0) {
-    console.log(
-      `[scroll] Found ${swiperElements.length} swiper elements, configuring for scroll compatibility`
-    );
-
-    // Add specific Lenis-compatible configuration to swipers
-    swiperElements.forEach((element, index) => {
-      // Add a class to help with CSS targeting
-      element.classList.add('lenis-scroll-compatible');
-
-      console.log(`[scroll] Configured swiper ${index + 1} for Lenis compatibility`);
-    });
-  }
-
-  // Check for other scroll-related elements that might need setup
-  initScrollAreas(lenis);
-}
-
-/**
- * Initialize specific scroll areas that have the lenis-scroll attribute
- * @param lenis The Lenis instance for smooth scrolling
- */
-function initScrollAreas(lenis: any) {
-  // Get all elements with lenis-scroll="scroll-area"
-  const scrollAreas = getAttributesWithValue(ATTRIBUTE.lenisScroll, 'scroll-area');
-
-  console.log(
-    `[scroll] Found ${scrollAreas.length} elements with ${ATTRIBUTE.lenisScroll}="scroll-area"`
-  );
-
-  // Process each scroll area as needed
-  scrollAreas.forEach((element, index) => {
-    console.log(`[scroll] Processing scroll area ${index + 1}`);
-
-    // Add any specific handling for scroll areas here
-    // For example, you might want to apply special styling or behaviors
-    element.classList.add('lenis-scroll-enabled');
-
-    // Set up scroll indicators if needed (similar to the reference)
-    setupScrollIndicator(element, lenis);
-  });
-}
-
-/**
- * Setup a scroll indicator for a scroll area (similar to the reference layout)
- * @param scrollArea The scroll area element
- * @param lenis The Lenis instance
- */
-function setupScrollIndicator(scrollArea: HTMLElement, lenis: any) {
-  // Check if an indicator already exists
-  let indicator = document.querySelector('.smooth-scroll-indicator');
-
-  // Create one if it doesn't exist
-  if (!indicator) {
-    indicator = document.createElement('div');
-    indicator.className = 'smooth-scroll-indicator';
-    indicator.textContent = 'Smooth Scrolling Active';
-    document.body.appendChild(indicator);
-
-    console.log('[scroll] Created scroll indicator');
-  }
-
-  // Show indicator briefly on initialization
-  indicator.classList.add('active');
-  setTimeout(() => {
-    indicator.classList.remove('active');
-  }, 3000);
-
-  // Store timeout ID
-  let scrollTimeout: number;
-
-  // Show indicator during scrolling
-  lenis.on('scroll', ({ scroll }: { scroll: number }) => {
-    // When scrolling, briefly show the indicator
-    indicator.classList.add('active');
-    (indicator as HTMLElement).textContent = `Smooth Scrolling: ${Math.round(scroll)}px`;
-
-    // Hide the indicator after scrolling stops
-    clearTimeout(scrollTimeout);
-    scrollTimeout = setTimeout(() => {
-      indicator.classList.remove('active');
-    }, 1000) as unknown as number;
-  });
-
-  console.log('[scroll] Scroll indicator configured');
+  return lenisInstance;
 }
 
 /**
  * Cleanup all scroll features to prevent memory leaks
+ * @param skipWordAnimations Skip word animation cleanup (useful if already done separately)
  */
-function cleanupScrollFeatures() {
-  if (contextScrollCleanup) {
-    contextScrollCleanup();
-    contextScrollCleanup = null;
+export function cleanupScroll(skipWordAnimations = false) {
+  // Clean up word animations first (unless skipped)
+  if (!skipWordAnimations) {
+    cleanupWordAnimations();
+  }
+
+  // Kill any remaining ScrollTrigger instances
+  ScrollTrigger.getAll().forEach((trigger) => {
+    trigger.kill();
+  });
+
+  if (contextCleanup) {
+    contextCleanup();
+    contextCleanup = null;
+  }
+
+  if (lenisInstance) {
+    destroyLenis(lenisInstance);
+    lenisInstance = null;
   }
 }
 
 // Export individual features for direct use
-export { animateWords, cleanupScrollFeatures, destroyLenis, initContextScroll, initSmoothScroll };
+export {
+  animateWords,
+  cleanupWordAnimations,
+  destroyLenis,
+  initSmoothScroll,
+  initWordAnimations,
+  resetLenis,
+};

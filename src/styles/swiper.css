@@ -1,4 +1,40 @@
-/* Swiper styles */
+/* VIDEO SLIDER */
+
+.swiper-slide.is-video-slider .video-embed_container {
+  opacity: 0.3;
+}
+    
+.swiper-slide.is-video-slider.swiper-slide-active .video-embed_container{
+opacity: 1;
+}
+
+.swiper-slide.is-video-slider .video-slider_content{
+opacity: 0;
+}
+
+.swiper-slide.is-video-slider.swiper-slide-active .video-slider_content{
+opacity: 1;
+}
+    
+    
+/*YT SLIDER*/
+
+
+  .swiper-slide.yt-feed.swiper-slide-active .yt-feed_content-container{
+  opacity: 1;
+  }
+
+.swiper-slide.yt-feed.swiper-slide-active{
+transform: scaleX(1) scaleY(1);
+}
+
+
+.swiper-slide.swiper-slide-active .yt-feed_image-container {
+    opacity: 1;
+    transform: scale(1);
+}
+
+
 .swiper-slide.work-slide{
     opacity: .4;
     transition: opacity 0.4s ease-out;
