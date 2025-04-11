@@ -8,12 +8,7 @@ import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 
 import { initComponents } from './components';
-import {
-  cleanupScroll,
-  cleanupWordAnimations,
-  initScroll,
-  initWordAnimations,
-} from './features/scroll';
+import { cleanupScroll, initScroll, initWordAnimations } from './features/scroll';
 import { resetLenis } from './features/scroll/smooth/lenisScroll';
 import { initSliders } from './features/sliders';
 import { viewTransitions } from './features/transitions';
@@ -29,71 +24,66 @@ window.Webflow.push(() => {
   viewTransitions.init();
   initComponents();
 
-  // Function to handle transition start
-  const handleTransitionStart = () => {
-    // Scroll to top at the start of transition
-    window.scrollTo(0, 0);
-
-    // First cleanup word animations
-    cleanupWordAnimations();
-
-    // Then clean up remaining scroll features but skip word animations
-    // since we've already cleaned them up
-    cleanupScroll(true);
-
-    // Kill any remaining animations
+  // Unified cleanup function to ensure consistent cleanup between transitions and page unload
+  const cleanupPage = () => {
+    // First kill all GSAP animations and ScrollTrigger instances
     gsap.killTweensOf('*');
+    ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+
+    // Then clean up scroll features (includes word animations)
+    cleanupScroll();
+
+    // Finally reset scroll position
+    window.scrollTo(0, 0);
   };
 
-  // Function to handle transition end
-  const handleTransitionEnd = () => {
-    // Reinitialize components and sliders
-    initSliders();
-    initComponents();
-
-    // Reinitialize Lenis
+  // Unified initialization function to ensure consistent setup
+  const initializePage = () => {
+    // First initialize Lenis for smooth scrolling
     if (window.lenis) {
       window.lenis = resetLenis(window.lenis);
-      window.lenis.scrollTo(0, { immediate: true });
     } else {
       window.lenis = initScroll();
     }
 
-    // Initialize word animations with delay
-    setTimeout(() => {
-      // Force a scroll position first
+    // Then initialize components and sliders
+    initComponents();
+    initSliders();
+
+    // Finally initialize animations after DOM is ready
+    requestAnimationFrame(() => {
+      // Reset scroll position before initializing animations
       if (window.lenis) {
         window.lenis.scrollTo(0, { immediate: true });
       }
 
-      // Initialize word animations
+      // Initialize word animations and refresh ScrollTrigger once
       initWordAnimations();
+    });
+  };
 
-      // Refresh ScrollTrigger
-      ScrollTrigger.refresh();
+  // Function to handle transition start
+  const handleTransitionStart = () => {
+    cleanupPage();
+  };
 
-      // Final refresh with a delay
-      setTimeout(() => {
-        ScrollTrigger.refresh(true);
-      }, 300);
-    }, 150);
+  // Function to handle transition end
+  const handleTransitionEnd = () => {
+    initializePage();
   };
 
   // Register event handlers
   window.addEventListener('swup:transitionStart', handleTransitionStart);
   window.addEventListener('swup:transitionEnd', handleTransitionEnd);
 
-  // Wait for everything to load before initializing Lenis
+  // Wait for everything to load before first initialization
   window.addEventListener('load', () => {
-    // Initialize all scroll features (smooth scrolling and animations)
-    const lenis = initScroll();
-
-    // Store lenis instance on window
-    window.lenis = lenis;
+    initializePage();
   });
 
-  // Clean up event listeners when Webflow editor reloads the page
+  // Clean up when Webflow editor reloads the page
   window.addEventListener('beforeunload', () => {
+    // Remove event listeners
     window.removeEventListener('swup:transitionStart', handleTransitionStart);
     window.removeEventListener('swup:transitionEnd', handleTransitionEnd);
 
@@ -102,11 +92,6 @@ window.Webflow.push(() => {
       Object.values(window.cleanupFunctions).forEach((cleanup) => cleanup());
     }
 
-    // Clean up scroll features
-    cleanupScroll();
-
-    // Kill all GSAP animations
-    ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-    gsap.killTweensOf('*');
+    cleanupPage();
   });
 });

@@ -18,31 +18,10 @@ let wordAnimations: { timeline?: gsap.core.Timeline; scrollTrigger?: ScrollTrigg
  * Kill ScrollTrigger instances related to word animations
  */
 function cleanupWordAnimations() {
-  // Find all elements that have word animations
-  const wordAnimElements = getAttributes(ATTRIBUTE.wordAnimation);
-
   // Kill all ScrollTrigger instances that might be related to word animations
   ScrollTrigger.getAll().forEach((trigger) => {
     if (trigger.vars.id?.includes('word-animation')) {
       trigger.kill();
-    }
-  });
-
-  // Revert split text and cleanup each element
-  wordAnimElements.forEach((el) => {
-    try {
-      // Revert existing split text
-      import('split-type').then((SplitTypeModule) => {
-        const SplitType = SplitTypeModule.default;
-        new SplitType(el).revert();
-      });
-
-      // Reset element properties
-      gsap.set(el, { clearProps: 'all' });
-      el.style.opacity = '1';
-      el.style.visibility = 'visible';
-    } catch (error) {
-      console.error(`Error cleaning up word animation: ${error}`);
     }
   });
 
@@ -58,14 +37,19 @@ function initWordAnimations() {
   const textElements = getAttributes(ATTRIBUTE.wordAnimation);
 
   if (textElements.length > 0) {
+    // First cleanup any existing animations
+    cleanupWordAnimations();
+
     // Set up animations for text elements
     textElements.forEach((el) => {
       const animation = animateWords(el as HTMLElement);
       wordAnimations.push(animation);
     });
 
-    // Refresh ScrollTrigger to ensure animations work
-    ScrollTrigger.refresh();
+    // Force a refresh of ScrollTrigger after all animations are set up
+    requestAnimationFrame(() => {
+      ScrollTrigger.refresh(true);
+    });
   }
 }
 
@@ -79,6 +63,19 @@ export function initScroll() {
 
   // Initialize word animations
   initWordAnimations();
+
+  // Set up transition event listeners
+  window.addEventListener('swup:transitionStart', () => {
+    cleanupScroll(true); // Skip word animations as they'll be cleaned up by the animation itself
+  });
+
+  window.addEventListener('swup:transitionEnd', () => {
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+      initScroll();
+      ScrollTrigger.refresh(true);
+    }, 100);
+  });
 
   return lenisInstance;
 }
@@ -97,6 +94,7 @@ export function cleanupScroll(skipWordAnimations = false) {
   ScrollTrigger.getAll().forEach((trigger) => {
     trigger.kill();
   });
+  ScrollTrigger.clearMatchMedia();
 
   if (contextCleanup) {
     contextCleanup();

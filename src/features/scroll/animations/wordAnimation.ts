@@ -18,21 +18,44 @@ export const animateWords = (
   const elementId = el.id || `word-anim-${Date.now()}`;
   if (!el.id) el.id = elementId;
 
+  // Store ALL original styles that could be affected
+  const originalStyles = {
+    position: window.getComputedStyle(el).position,
+    display: window.getComputedStyle(el).display,
+    visibility: window.getComputedStyle(el).visibility,
+    opacity: window.getComputedStyle(el).opacity,
+    transform: window.getComputedStyle(el).transform,
+    transformStyle: window.getComputedStyle(el).transformStyle,
+    perspective: window.getComputedStyle(el).perspective,
+    scale: window.getComputedStyle(el).scale,
+  };
+
+  // Store the original HTML content for restoration
+  const originalContent = el.innerHTML;
+
   // Clean up any existing animation on this element
   ScrollTrigger.getAll().forEach((trigger) => {
-    if (trigger.vars.trigger === el) trigger.kill();
+    if (trigger.vars.trigger === el || trigger.vars.id?.includes(elementId)) {
+      trigger.kill();
+    }
   });
 
   // Reset the element content
   try {
     // Revert any existing split
-    new SplitType(el).revert();
+    const split = new SplitType(el);
+    split.revert();
 
-    // Reset element properties to ensure a clean state
+    // Reset element to original content if needed
+    el.innerHTML = originalContent;
+
+    // Reset element properties while preserving original styles
     gsap.set(el, {
-      clearProps: 'all',
-      opacity: 1,
-      visibility: 'visible',
+      clearProps: 'all', // Clear all GSAP-modified properties
+      position: originalStyles.position !== 'static' ? originalStyles.position : 'relative',
+      display: originalStyles.display !== 'none' ? originalStyles.display : 'block',
+      opacity: originalStyles.opacity !== '0' ? originalStyles.opacity : '1',
+      visibility: originalStyles.visibility !== 'hidden' ? originalStyles.visibility : 'visible',
     });
   } catch (error) {
     console.error('Error resetting element:', error);
@@ -51,30 +74,53 @@ export const animateWords = (
     paused: true,
     defaults: {
       duration: 0.5,
-      ease: 'power1.inOut',
+      ease: 'power2.out',
     },
   });
 
-  // Set perspective for 3D animation
-  tl.set(el, { perspective: 1000 });
+  // Set perspective for 3D animation and ensure initial visibility
+  tl.set(el, {
+    perspective: 1000,
+    opacity: 1,
+    visibility: 'visible',
+    position: originalStyles.position !== 'static' ? originalStyles.position : 'relative',
+    display: originalStyles.display !== 'none' ? originalStyles.display : 'block',
+    left: '50%',
+    x: '-50%',
+    width: 'auto',
+    transformOrigin: 'center center',
+  });
 
   // Animate each line of words
-  for (const [linepos, line] of lines.entries()) {
+  lines.forEach((line, linepos) => {
     const words = line.querySelectorAll('.word');
-    if (words.length === 0) continue;
+    if (words.length === 0) return;
 
-    // Set up 3D properties on the line
+    // Store original line styles
+    const lineStyles = {
+      position: window.getComputedStyle(line).position,
+      display: window.getComputedStyle(line).display,
+    };
+
+    // Set up 3D properties on the line while preserving original styles
     gsap.set(line, {
       transformStyle: 'preserve-3d',
-      position: 'relative',
-      display: 'block',
+      position: lineStyles.position !== 'static' ? lineStyles.position : 'relative',
+      display: lineStyles.display !== 'none' ? lineStyles.display : 'block',
+      opacity: 1,
+      left: '50%',
+      x: '-50%',
+      width: 'auto',
+      textAlign: 'center',
     });
 
-    // Set initial state of words
+    // Set initial state of words with style preservation
     gsap.set(words, {
       opacity: 1,
       display: 'inline-block',
       position: 'relative',
+      immediateRender: true,
+      transformOrigin: 'center center',
     });
 
     // Animate words in this line
@@ -98,22 +144,64 @@ export const animateWords = (
           each: 0.05,
           from: 'center',
         },
+        immediateRender: false,
       },
       linepos * 0.1
     );
-  }
+  });
 
-  // Create the ScrollTrigger
+  // Create the ScrollTrigger with adjusted settings
   const st = ScrollTrigger.create({
     id: `word-animation-${elementId}`,
     trigger: el,
-    start: 'top center',
-    end: 'bottom top',
-    scrub: 1,
+    start: 'center center',
+    end: '+=300%',
+    scrub: 0.5,
     pin: true,
+    pinSpacing: true,
+    pinType: 'transform',
     animation: tl,
+    onRefresh: () => {
+      st.refresh();
+    },
+    onUpdate: (self) => {
+      tl.progress(self.progress);
+    },
+    onEnter: () => {
+      // Restore styles when entering viewport
+      gsap.set(el, {
+        position: originalStyles.position !== 'static' ? originalStyles.position : 'relative',
+        display: originalStyles.display !== 'none' ? originalStyles.display : 'block',
+        opacity: originalStyles.opacity !== '0' ? originalStyles.opacity : '1',
+        visibility: originalStyles.visibility !== 'hidden' ? originalStyles.visibility : 'visible',
+        left: '50%',
+        x: '-50%',
+        width: 'auto',
+      });
+    },
+    onLeave: () => {
+      // Preserve styles when leaving viewport
+      gsap.set(el, {
+        position: originalStyles.position !== 'static' ? originalStyles.position : 'relative',
+        display: originalStyles.display !== 'none' ? originalStyles.display : 'block',
+        left: '50%',
+        x: '-50%',
+        width: 'auto',
+      });
+    },
+    onKill: () => {
+      // Restore original styles when the ScrollTrigger is killed
+      gsap.set(el, {
+        clearProps: 'all',
+        ...originalStyles,
+      });
+      // Revert split if it exists
+      const split = new SplitType(el);
+      split.revert();
+      // Restore original content
+      el.innerHTML = originalContent;
+    },
   });
 
-  // Return both timeline and ScrollTrigger for cleanup
   return { timeline: tl, scrollTrigger: st };
 };
